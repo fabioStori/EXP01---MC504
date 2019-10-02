@@ -120,10 +120,10 @@ int main() {
 	pthread_join(threadWest, NULL);
 
 	//retorno da thread... acho que '0' é bom, diferente disso é ruim
-	printf("thread N retornou %d", retN);
-	printf("thread E retornou %d", retE);
-	printf("thread S retornou %d", retS);
-	printf("thread W retornou %d", retW);
+	printf("thread N retornou %d\n", retN);
+	printf("thread E retornou %d\n", retE);
+	printf("thread S retornou %d\n", retS);
+	printf("thread W retornou %d\n", retW);
 
 
 
