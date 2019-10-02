@@ -33,8 +33,8 @@ void printQueue(car * head) {
 
     while (current != NULL) {
         printf("BAT %d DIRECAO %c\n", current->carId, current->carDirection);
-		// fflush(stdout);
-		// sleep(1);
+	fflush(stdout);
+	sleep(1);
         current = current->nextCar;
     }
 }
