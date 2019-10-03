@@ -4,6 +4,9 @@
 #include <pthread.h>
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+int bitmask[4];
+int queueIsEmpty = 0;
 
 //struct car pra lista de prioridade First In First Out de cada trilho
 typedef struct car{
@@ -19,11 +22,17 @@ void addCar(car * head, int id, char dir);
 //função que toda thread ira rodar
 //atualmente eu travo o mutex apenas pra printar os carros na ordem que eles chegam
 void* threadFunc (void *head) {	
-	pthread_mutex_lock(&mutex);	
+	if(head->nextCar != NULL){
+		pthread_mutex_lock(&mutex);
+		if(){
 
-	printQueue(head);	
+		}
 
-	pthread_mutex_unlock(&mutex);	
+		printQueue(head);
+
+		pthread_mutex_unlock(&mutex);	
+	}
+	
  	pthread_exit(NULL);
 }
 
@@ -33,8 +42,8 @@ void printQueue(car * head) {
 
     while (current != NULL) {
         printf("BAT %d DIRECAO %c\n", current->carId, current->carDirection);
-	fflush(stdout);
-	sleep(1);
+		fflush(stdout);
+		sleep(1);
         current = current->nextCar;
     }
 }
@@ -42,6 +51,7 @@ void printQueue(car * head) {
 //adiciona carro no queue First In First out da trilha
 void addCar(car * head, int id, char dir) {
     car * current = head;
+
     while (current->nextCar != NULL) {
         current = current->nextCar;
     }
@@ -52,12 +62,13 @@ void addCar(car * head, int id, char dir) {
     current->nextCar->nextCar = NULL;
 }
 
-
-
 int main() {
 	
 	char input[100];
 	scanf("%s", input);	
+
+	for(int i=0; i<4; i++)
+		bitmask[i] = 0;	
 
 	//iniciando as listas ligadas (não lembro se tem uma forma mais bonita de fazer isso)
 	car * headOfNorth = NULL;
@@ -83,21 +94,27 @@ int main() {
 	headOfWest->nextCar = NULL;
 	headOfWest->carId = 0;
 	headOfWest->carDirection = 'w';	
+	
+	car * queue = NULL;
+	queue = malloc(sizeof(car));
+	queue->nextCar = NULL;
+	queue->carId = 0;
+	queue->carDirection = ' ';	
 
 	//para cada letra do input, cria um carro e adiciona ele na queue da trilha dele
 	for (int i = 0; i < strlen(input); i++) {
 		switch (input[i]) {
 			case 'n':
-				addCar(headOfNorth, i+1, 'n');			
+				addCar(headOfNorth, i+1, 'n');	
 				break;
 			case 'e':
 				addCar(headOfEast, i+1, 'e');
 				break;
 			case 's':
-				addCar(headOfSouth, i+1, 's');	
+				addCar(headOfSouth, i+1, 's');
 				break;
 			case 'w':
-				addCar(headOfWest, i+1, 'w');	
+				addCar(headOfWest, i+1, 'w');
 				break;
 		}		
 	}
@@ -112,7 +129,14 @@ int main() {
 	retS = pthread_create(&threadSouth, NULL, threadFunc, (void *) headOfSouth);
 	retW = pthread_create(&threadWest, NULL, threadFunc, (void *) headOfWest);
 
-
+	pthread_mutex_lock(&mutex);
+	while(!queueIsEmpty){
+		int quant
+		pthread_cond_wait(&cond, &wait);
+		addCar(queue, )
+	}
+		
+	pthread_mutex_unlock(&mutex);
 
 	pthread_join(threadNorth, NULL);
 	pthread_join(threadEast, NULL);
@@ -124,8 +148,6 @@ int main() {
 	printf("thread E retornou %d\n", retE);
 	printf("thread S retornou %d\n", retS);
 	printf("thread W retornou %d\n", retW);
-
-
 
 	// printQueue(headOfNorth);	
 	// printQueue(headOfEast);	
