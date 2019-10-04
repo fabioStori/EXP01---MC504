@@ -3,10 +3,12 @@
 #include <string.h>
 #include <pthread.h>
 
+//https://gist.github.com/rtv/4989304
+
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 int bitmask[4];
-int queueIsEmpty = 0;
+int N, E, S, W = 0;
 
 //struct car pra lista de prioridade First In First Out de cada trilho
 typedef struct car{
@@ -18,34 +20,46 @@ typedef struct car{
 void* threadFunc(void *arg);
 void printQueue(car * head);
 void addCar(car * head, int id, char dir);
+void removeCar(car * head);
 
 //função que toda thread ira rodar
 //atualmente eu travo o mutex apenas pra printar os carros na ordem que eles chegam
-void* threadFunc (void *head) {	
-	if(head->nextCar != NULL){
+void* threadFunc (void *head) {
+	car * current = head;	
+	while(current->nextCar != NULL){		
 		pthread_mutex_lock(&mutex);
-		if(){
-
+		switch (current->carDirection) {
+			case 'n':
+				N = 1;	
+				break;
+			case 'e':
+				E = 1;
+				break;
+			case 's':
+				S = 1;
+				break;
+			case 'w':
+				W = 1;
+				break;
 		}
-
+		pthread_cond_signal(&cond);		
 		printQueue(head);
-
-		pthread_mutex_unlock(&mutex);	
-	}
-	
+		current = current->nextCar;
+		pthread_mutex_unlock(&mutex);
+	}	
  	pthread_exit(NULL);
 }
 
 //imprime o ID e a DIREÇÃO do carro (BAT) na ordem "mais velho primeiro"
 void printQueue(car * head) {
-    car * current = head->nextCar;
-
-    while (current != NULL) {
-        printf("BAT %d DIRECAO %c\n", current->carId, current->carDirection);
-		fflush(stdout);
-		sleep(1);
-        current = current->nextCar;
-    }
+    car * temp = head->nextCar;
+	printf("BAT %d %c chegou no cruzamento\n", temp->carId, temp->carDirection);
+    // while (temp != NULL) {
+    //     printf("BAT %d DIRECAO %c\n", temp->carId, temp->carDirection);
+	// 	fflush(stdout);
+	// 	sleep(1);
+    //     temp = temp->nextCar;
+    // }
 }
 
 //adiciona carro no queue First In First out da trilha
@@ -61,6 +75,13 @@ void addCar(car * head, int id, char dir) {
 	current->nextCar->carDirection = dir;
     current->nextCar->nextCar = NULL;
 }
+
+void removeCar(car * head) {
+	struct car *temp = head->nextCar;
+    head->nextCar = temp;
+	free(temp);
+}
+
 
 int main() {
 	
@@ -130,10 +151,68 @@ int main() {
 	retW = pthread_create(&threadWest, NULL, threadFunc, (void *) headOfWest);
 
 	pthread_mutex_lock(&mutex);
-	while(!queueIsEmpty){
-		int quant
-		pthread_cond_wait(&cond, &wait);
-		addCar(queue, )
+	while(N==1 || E==1 || S==1 || W==1){
+		char aut = 'z';
+		char notAut = 'z';
+
+		pthread_cond_wait(&cond, &mutex);
+
+		bitmask[0]=N;
+		bitmask[1]=E;
+		bitmask[2]=S;
+		bitmask[3]=W;
+
+		int sum=0;
+
+		for(int i=0; i<4; i++)
+			sum = sum + bitmask[i];
+
+		printf("entrou no while");
+
+		int impasse = 0;
+
+		if(sum > 1){
+			printf("entrou no if do main");
+
+			for(int i=0; i<4 && impasse != 2; i++){
+				if(bitmask[i] == 1 && impasse == 0){
+					switch(i){
+						case 0:
+							aut = headOfNorth->nextCar->carDirection;
+							bitmask[i] = 0;
+							removeCar(headOfNorth);
+						case 1:
+							aut = headOfEast->nextCar->carDirection;
+							bitmask[i] = 0;
+							removeCar(headOfEast);
+						case 2:
+							aut = headOfSouth->nextCar->carDirection;
+							bitmask[i] = 0;
+							removeCar(headOfSouth);
+						case 3:
+							aut = headOfWest->nextCar->carDirection;
+							bitmask[i] = 0;
+							removeCar(headOfWest);
+					}
+					impasse++;
+				}else if(bitmask[i] == 1 && impasse == 1){
+					switch(i){
+						case 0:
+							notAut = headOfNorth->nextCar->carDirection;
+						case 1:
+							notAut = headOfEast->nextCar->carDirection;
+						case 2:
+							notAut = headOfSouth->nextCar->carDirection;
+						case 3:
+							notAut = headOfWest->nextCar->carDirection;
+					}
+					impasse++;
+				}
+				
+			}
+
+			printf("Impasse: %c e %c , sinalizando %c para ir", aut, notAut, aut);
+		}
 	}
 		
 	pthread_mutex_unlock(&mutex);
