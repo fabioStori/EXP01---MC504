@@ -62,12 +62,14 @@ void addCar(car * head, int id, char dir) {
 	current->nextCar->carId = id;
 	current->nextCar->carDirection = dir;
 	current->nextCar->nextCar = NULL;
+	return;
 }
 
-void removeCar(car * head) {
+void removeCar(car * head) {	
 	struct car *temp = head->nextCar;
 	head->nextCar = temp->nextCar;
 	free(temp);
+	return;
 }
 
 
@@ -127,9 +129,12 @@ int main() {
 	pthread_t threadNorth, threadEast, threadSouth, threadWest;
 	int retN, retE, retS, retW;
 	int threadsInitialized = 0;	
+	int sum = 0;
+	int whileIt = 0;
 
 	pthread_mutex_lock(&mutex);
 	do{
+		whileIt++;
 		if (!threadsInitialized) {
 			retN = pthread_create(&threadNorth, NULL, threadFunc, (void *)headOfNorth);
 			retE = pthread_create(&threadEast, NULL, threadFunc, (void *)headOfEast);
@@ -146,11 +151,11 @@ int main() {
 		bitmask[2] = S;
 		bitmask[3] = W;
 
-		int sum = 0;
+		sum = 0;
 		for (int i = 0; i < 4; i++)
 			sum = sum + bitmask[i];
 		
-
+		
 		int foundHighestPriority = 0;
 		
 		car * authorizedCar = NULL;
@@ -261,9 +266,11 @@ int main() {
 		
 		free(authorizedCar);
 		pthread_cond_signal(&cond);
-	} while (N == 1 || E == 1 || S == 1 || W == 1);
+	} while (sum!=0);
 
 	pthread_mutex_unlock(&mutex);
+
+	printf("iterações do while main %d\n", whileIt);
 
 	free(headOfNorth);
 	free(headOfEast);
