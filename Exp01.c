@@ -144,6 +144,8 @@ int main() {
 
 	pthread_mutex_lock(&mutex);
 	while (N == 1 || E == 1 || S == 1 || W == 1) {
+
+		printf("entrou no while1\n");
 		char aut = 'z';
 		char notAut = 'z';
 
@@ -159,32 +161,37 @@ int main() {
 		for (int i = 0; i < 4; i++)
 			sum = sum + bitmask[i];
 
-		printf("entrou no while\n");
+		printf("entrou no while2\n");
 
 		int impasse = 0;
 
 		if (sum > 1) {
 			printf("entrou no if do main\n");
 
-			for (int i = 0; i < 4 && impasse != 2; i++) {
+			for (int i = 0; i < 4; i++) {
+				printf("%i iteração do for do main - impasse = %d\n", i, impasse);
 				if (bitmask[i] == 1 && impasse == 0) {
 					switch (i) {
 					case 0:
 						aut = headOfNorth->nextCar->carDirection;
 						bitmask[i] = 0;
-						removeCar(headOfNorth);
+						removeCar(headOfNorth->nextCar);
+						break;
 					case 1:
 						aut = headOfEast->nextCar->carDirection;
 						bitmask[i] = 0;
-						removeCar(headOfEast);
+						removeCar(headOfEast->nextCar);
+						break;
 					case 2:
 						aut = headOfSouth->nextCar->carDirection;
 						bitmask[i] = 0;
-						removeCar(headOfSouth);
+						removeCar(headOfSouth->nextCar);
+						break;
 					case 3:
 						aut = headOfWest->nextCar->carDirection;
 						bitmask[i] = 0;
-						removeCar(headOfWest);
+						removeCar(headOfWest->nextCar);
+						break;
 					}
 					impasse++;
 				}
@@ -192,12 +199,16 @@ int main() {
 					switch (i) {
 					case 0:
 						notAut = headOfNorth->nextCar->carDirection;
+						break;
 					case 1:
 						notAut = headOfEast->nextCar->carDirection;
+						break;
 					case 2:
 						notAut = headOfSouth->nextCar->carDirection;
+						break;
 					case 3:
 						notAut = headOfWest->nextCar->carDirection;
+						break;
 					}
 					impasse++;
 				}
