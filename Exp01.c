@@ -76,7 +76,7 @@ void addCar(car * head, int id, char dir) {
 
 void removeCar(car * head) {
 	struct car *temp = head->nextCar;
-	head->nextCar = temp;
+	head->nextCar = temp->nextCar;
 	free(temp);
 }
 
