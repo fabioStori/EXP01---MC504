@@ -18,7 +18,6 @@ typedef struct car {
 }car;
 
 void* threadFunc(void *arg);
-void printQueue(car * head);
 void addCar(car * head, int id, char dir);
 void removeCar(car * head);
 
@@ -41,23 +40,14 @@ void* threadFunc(void *head) {
 			W = 1;
 			break;
 		}
-		int i = pthread_cond_signal(&cond);
 		printf("BAT %d %c chegou no cruzamento\n", current->nextCar->carId, current->nextCar->carDirection);
-		current = current->nextCar;
+		pthread_cond_signal(&cond);
+		pthread_cond_wait(&cond, &mutex);
+
+		current = current->nextCar;		
 		pthread_mutex_unlock(&mutex);
 	}
 	pthread_exit(NULL);
-}
-
-void printQueue(car * head) {
-	car * temp = head->nextCar;
-	printf("BAT %d %c chegou no cruzamento\n", temp->carId, temp->carDirection);
-	// while (temp != NULL) {
-	//     printf("BAT %d DIRECAO %c\n", temp->carId, temp->carDirection);
-	// 	fflush(stdout);
-	// 	sleep(1);
-	//     temp = temp->nextCar;
-	// }
 }
 
 //adiciona carro no queue First In First out da trilha
@@ -131,99 +121,155 @@ int main() {
 			break;
 		}
 	}
-
 	//iniciando threads, passando o threadFunc e a cabeça da lista de prioridades da respectiva trilha
 	//to criando uma thread pra cada trilha, da forma que conversamos...
 
 	pthread_t threadNorth, threadEast, threadSouth, threadWest;
 	int retN, retE, retS, retW;
-	retN = pthread_create(&threadNorth, NULL, threadFunc, (void *)headOfNorth);
-	retE = pthread_create(&threadEast, NULL, threadFunc, (void *)headOfEast);
-	retS = pthread_create(&threadSouth, NULL, threadFunc, (void *)headOfSouth);
-	retW = pthread_create(&threadWest, NULL, threadFunc, (void *)headOfWest);
+	int threadsInitialized = 0;	
 
 	pthread_mutex_lock(&mutex);
-	while (N == 1 || E == 1 || S == 1 || W == 1) {
-
-		printf("entrou no while1\n");
-		char aut = 'z';
-		char notAut = 'z';
+	do{
+		if (!threadsInitialized) {
+			retN = pthread_create(&threadNorth, NULL, threadFunc, (void *)headOfNorth);
+			retE = pthread_create(&threadEast, NULL, threadFunc, (void *)headOfEast);
+			retS = pthread_create(&threadSouth, NULL, threadFunc, (void *)headOfSouth);
+			retW = pthread_create(&threadWest, NULL, threadFunc, (void *)headOfWest);
+			threadsInitialized = 1;
+		}
 
 		pthread_cond_wait(&cond, &mutex);
 
+		//atualizando bitmask
 		bitmask[0] = N;
 		bitmask[1] = E;
 		bitmask[2] = S;
 		bitmask[3] = W;
 
 		int sum = 0;
-
 		for (int i = 0; i < 4; i++)
 			sum = sum + bitmask[i];
+		
 
-		printf("entrou no while2\n");
-
-		int impasse = 0;
+		int foundHighestPriority = 0;
+		
+		car * authorizedCar = NULL;
+		authorizedCar= malloc(sizeof(car));
+		authorizedCar->carId = 0;
+		authorizedCar->carDirection = 'z';
+		authorizedCar->nextCar = NULL;
 
 		if (sum > 1) {
-			printf("entrou no if do main\n");
-
+			printf("Impasses: ");
 			for (int i = 0; i < 4; i++) {
-				printf("%i iteração do for do main - impasse = %d\n", i, impasse);
-				if (bitmask[i] == 1 && impasse == 0) {
+				if (bitmask[i] == 1) {
 					switch (i) {
 					case 0:
-						aut = headOfNorth->nextCar->carDirection;
-						bitmask[i] = 0;
-						N = 0;
-						removeCar(headOfNorth->nextCar);
-						break;
-					case 1:
-						aut = headOfEast->nextCar->carDirection;
-						bitmask[i] = 0;
-						E = 0;
-						removeCar(headOfEast->nextCar);
-						break;
-					case 2:
-						aut = headOfSouth->nextCar->carDirection;
-						bitmask[i] = 0;
-						S = 0;
-						removeCar(headOfSouth->nextCar);
-						break;
-					case 3:
-						aut = headOfWest->nextCar->carDirection;
-						bitmask[i] = 0;
-						W = 0;
-						removeCar(headOfWest->nextCar);
-						break;
-					}
-					impasse++;
-				}
-				else if (bitmask[i] == 1 && impasse == 1) {
-					switch (i) {
-					case 0:
-						notAut = headOfNorth->nextCar->carDirection;
-						break;
-					case 1:
-						notAut = headOfEast->nextCar->carDirection;
-						break;
-					case 2:
-						notAut = headOfSouth->nextCar->carDirection;
-						break;
-					case 3:
-						notAut = headOfWest->nextCar->carDirection;
-						break;
-					}
-					impasse++;
-				}
+						printf("[%c] ", headOfNorth->nextCar->carDirection);
+						if (!foundHighestPriority) {
 
+							authorizedCar->carDirection = headOfNorth->nextCar->carDirection;
+							authorizedCar->carId = headOfNorth->nextCar->carId;
+
+							foundHighestPriority = 1;
+							N = 0;
+							bitmask[i] = 0;
+							removeCar(headOfNorth);
+						}
+						
+						break;
+					case 1:
+						printf("[%c] ", headOfEast->nextCar->carDirection);
+						if (!foundHighestPriority) {
+
+							authorizedCar->carDirection = headOfEast->nextCar->carDirection;
+							authorizedCar->carId = headOfEast->nextCar->carId;
+
+							foundHighestPriority = 1;
+							E = 0;
+							bitmask[i] = 0;
+							removeCar(headOfEast);
+						}
+						break;
+					case 2:
+						printf("[%c] ", headOfSouth->nextCar->carDirection);
+						if (!foundHighestPriority) {
+
+							authorizedCar->carDirection = headOfSouth->nextCar->carDirection;
+							authorizedCar->carId = headOfSouth->nextCar->carId;
+
+							foundHighestPriority = 1;
+							S = 0;
+							bitmask[i] = 0;
+							removeCar(headOfSouth);
+						}
+						break;
+					case 3:
+						printf("[%c] ", headOfWest->nextCar->carDirection);
+						if (!foundHighestPriority) {
+
+							authorizedCar->carDirection = headOfWest->nextCar->carDirection;
+							authorizedCar->carId = headOfWest->nextCar->carId;
+
+							foundHighestPriority = 1;
+							W = 0;
+							bitmask[i] = 0;
+							removeCar(headOfWest);
+						}
+						break;
+					}
+				}				
 			}
-
-			printf("Impasse: %c e %c , sinalizando %c para ir\n", aut, notAut, aut);
+			printf(". Sinalizando para %c ir\n", authorizedCar->carDirection);
+			printf("BAT %d %c saiu no cruzamento\n", authorizedCar->carId, authorizedCar->carDirection);
 		}
-	}
+		else if (sum == 1) {
+			for (int i = 0; i < 4; i++) {
+				if (bitmask[i] == 1) {
+					switch (i) {
+					case 0:
+						printf("BAT %d %c saiu do cruzamento\n", headOfNorth->nextCar->carId, headOfNorth->nextCar->carDirection);
+						N = 0;
+						bitmask[i] = 0;
+						removeCar(headOfNorth);
+						break;
+					case 1:
+						printf("BAT %d %c saiu do cruzamento\n", headOfEast->nextCar->carId, headOfEast->nextCar->carDirection);
+						E = 0;
+						bitmask[i] = 0;
+						removeCar(headOfEast);
+						break;
+					case 2:
+						printf("BAT %d %c saiu do cruzamento\n", headOfSouth->nextCar->carId, headOfSouth->nextCar->carDirection);
+						S = 0;
+						bitmask[i] = 0;
+						removeCar(headOfSouth);
+						break;
+					case 3:
+						printf("BAT %d %c saiu do cruzamento\n", headOfWest->nextCar->carId, headOfWest->nextCar->carDirection);
+						W = 0;
+						bitmask[i] = 0;
+						removeCar(headOfWest);
+						break;
+					}
+				}
+			}
+		}
+		else {
+			printf("Queue Vazio!\n");
+		}
+		
+		free(authorizedCar);
+		pthread_cond_signal(&cond);
+	} while (N == 1 || E == 1 || S == 1 || W == 1);
 
 	pthread_mutex_unlock(&mutex);
+
+	free(headOfNorth);
+	free(headOfEast);
+	free(headOfSouth);
+	free(headOfWest);
+	
 
 	pthread_join(threadNorth, NULL);
 	pthread_join(threadEast, NULL);
@@ -231,10 +277,10 @@ int main() {
 	pthread_join(threadWest, NULL);
 
 	//retorno da thread... acho que '0' é bom, diferente disso é ruim
-	printf("thread N retornou %d\n", retN);
-	printf("thread E retornou %d\n", retE);
-	printf("thread S retornou %d\n", retS);
-	printf("thread W retornou %d\n", retW);
+	//printf("thread N retornou %d\n", retN);
+	//printf("thread E retornou %d\n", retE);
+	//printf("thread S retornou %d\n", retS);
+	//printf("thread W retornou %d\n", retW);
 
 	// printQueue(headOfNorth);	
 	// printQueue(headOfEast);	
