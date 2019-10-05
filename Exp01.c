@@ -175,21 +175,25 @@ int main() {
 					case 0:
 						aut = headOfNorth->nextCar->carDirection;
 						bitmask[i] = 0;
+						N = 0;
 						removeCar(headOfNorth->nextCar);
 						break;
 					case 1:
 						aut = headOfEast->nextCar->carDirection;
 						bitmask[i] = 0;
+						E = 0;
 						removeCar(headOfEast->nextCar);
 						break;
 					case 2:
 						aut = headOfSouth->nextCar->carDirection;
 						bitmask[i] = 0;
+						S = 0;
 						removeCar(headOfSouth->nextCar);
 						break;
 					case 3:
 						aut = headOfWest->nextCar->carDirection;
 						bitmask[i] = 0;
+						W = 0;
 						removeCar(headOfWest->nextCar);
 						break;
 					}
